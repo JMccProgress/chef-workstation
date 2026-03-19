@@ -6,6 +6,10 @@ tags
 # ruby / bundler
 Gemfile.lock
 */vendor/*
+.bundle/
+
+# coverage reports
+coverage/
 
 # vi
 *.swp

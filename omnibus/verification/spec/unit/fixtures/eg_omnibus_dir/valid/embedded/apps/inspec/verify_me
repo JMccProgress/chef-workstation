@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+puts "InSpec compliance engine is ready."
+puts "Compliance profiles can be written and executed."
+exit 0

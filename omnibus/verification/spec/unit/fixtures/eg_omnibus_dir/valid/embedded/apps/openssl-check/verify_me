@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+puts "OpenSSL is functional. SSL connectivity is available."
+puts "Secure connections to Chef Server and cloud providers supported."
+exit 0
