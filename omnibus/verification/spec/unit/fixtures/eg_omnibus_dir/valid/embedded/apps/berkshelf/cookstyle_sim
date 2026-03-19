@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+# Simulates the output of `cookstyle` running against a sample cookbook so
+# that feature specs can assert style-check output patterns without requiring
+# a real Chef Workstation installation.
+puts "Inspecting 3 files"
+puts ""
+puts "3 files inspected, no offenses detected"
+puts "Cookstyle check passed. All files conform to Chef style guidelines."
+exit 0

@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+# Simulates the output of `chef generate cookbook <name>` so that
+# feature specs can assert meaningful, domain-specific output patterns
+# without requiring a real Chef Workstation installation.
+puts "Creating cookbook: example"
+puts "* /tmp/example"
+puts "* /tmp/example/metadata.rb"
+puts "* /tmp/example/README.md"
+puts "* /tmp/example/chefignore"
+puts "* /tmp/example/recipes"
+puts "* /tmp/example/recipes/default.rb"
+puts "* /tmp/example/attributes"
+puts "* /tmp/example/templates"
+puts "* /tmp/example/files"
+puts "* /tmp/example/spec"
+puts "* /tmp/example/spec/spec_helper.rb"
+puts "* /tmp/example/spec/unit"
+puts "* /tmp/example/spec/unit/recipes"
+puts "* /tmp/example/spec/unit/recipes/default_spec.rb"
+puts "Cookbook example generated successfully."
+exit 0

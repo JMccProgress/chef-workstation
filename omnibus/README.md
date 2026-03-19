@@ -2,6 +2,39 @@
 
 This project creates full-stack platform-specific packages for Chef Workstation
 
+## Why is this folder here?
+
+The `omnibus/` directory is co-located inside the `chef-workstation` repository
+by design. Here is why:
+
+**Monorepo packaging pattern.** Chef Workstation is delivered as a single,
+self-contained installer for Windows, macOS, and Linux. That installer is built
+with [Omnibus](https://github.com/chef/omnibus), a tool that bundles an
+application together with its full Ruby runtime, all gem dependencies, and any
+native binaries into one platform-specific package. Keeping the Omnibus
+configuration alongside the application source means:
+
+- **Versioned together.** A single commit can change application code *and* the
+  packaging definition that describes how it is bundled. There is no risk of the
+  packaging repository drifting out of sync with the application.
+- **Reviewed together.** Pull requests that change behaviour and the way it is
+  packaged go through the same review process and CI pipeline.
+- **One source of truth.** The `VERSION` file, `CHANGELOG.md`, and `.expeditor/`
+  automation all live at the repo root. Expeditor reads them to drive version
+  bumps, changelog updates, and build triggers — all pointing at this directory
+  for the packaging step.
+- **Portable build environment.** Developers can run `kitchen converge` from
+  inside this directory to spin up a build VM without needing a separate
+  repository clone.
+
+The `omnibus/verification/` sub-directory is a companion post-install test
+suite. After an Omnibus package is installed on a target machine, the
+`omnibus-test.sh` / `omnibus-test.ps1` scripts invoke
+`chef verify` (defined in `verification/verify.rb`) to confirm that every
+bundled tool — Chef Infra Client, InSpec, Test Kitchen, Knife, Cookstyle, and
+others — is functional. The BDD-style RSpec suite in `verification/spec/` runs
+during CI to validate that the verification framework itself is correct.
+
 ## Overview
 
 We use Omnibus to describe our packaging. [Expeditor](https://expeditor.chef.io/docs/getting-started/) manages triggering builds, promotions and other common tasks.

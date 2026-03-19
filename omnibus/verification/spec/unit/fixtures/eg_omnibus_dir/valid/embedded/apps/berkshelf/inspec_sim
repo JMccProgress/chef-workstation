@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+# Simulates the output of `inspec exec <profile>` running a trivial compliance
+# profile so that feature specs can assert audit output patterns without
+# requiring a real Chef Workstation installation.
+puts "Profile: example-profile"
+puts "Version: 0.1.0"
+puts "Target: local://"
+puts ""
+puts "  Control: 01: File permissions check"
+puts "     [PASS] File permissions are correct"
+puts ""
+puts "Profile Summary: 1 successful control, 0 control failures, 0 controls skipped"
+puts "Test Summary: 1 successful, 0 failures, 0 skipped"
+puts "InSpec run completed successfully."
+exit 0

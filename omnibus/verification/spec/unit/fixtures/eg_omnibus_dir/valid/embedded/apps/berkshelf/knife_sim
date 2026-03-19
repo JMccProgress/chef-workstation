@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+# Simulates the output of `knife help` so that feature specs can assert
+# Knife CLI output patterns without requiring a real Chef Workstation
+# installation or an accessible Chef Infra Server.
+puts "knife sub-commands: (for details, knife SUB-COMMAND --help)"
+puts ""
+puts "knife bootstrap FQDN_OR_IP (options)"
+puts "knife client list (options)"
+puts "knife cookbook list (options)"
+puts "knife data bag list (options)"
+puts "knife environment list (options)"
+puts "knife node list (options)"
+puts "knife role list (options)"
+puts "knife search INDEX QUERY (options)"
+puts "knife ssh QUERY COMMAND (options)"
+puts "knife status (options)"
+puts "knife upload [PATTERN1 PATTERN2] (options)"
+puts "Knife is ready. Use `knife <subcommand> --help` for details."
+exit 0
