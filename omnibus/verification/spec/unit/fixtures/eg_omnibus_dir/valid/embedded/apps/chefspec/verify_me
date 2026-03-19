@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+puts "ChefSpec recipe unit testing engine is ready."
+puts "Recipes can be unit-tested without a Chef Server."
+exit 0

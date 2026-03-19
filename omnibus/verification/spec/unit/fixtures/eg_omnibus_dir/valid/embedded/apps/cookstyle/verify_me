@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+puts "Cookstyle linter is ready."
+puts "Cookbook code style and correctness checks are available."
+exit 0

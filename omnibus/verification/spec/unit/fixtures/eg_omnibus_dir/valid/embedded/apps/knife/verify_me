@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+puts "Knife is ready to interact with Chef Infra Server."
+puts "Node management, role uploads, and cookbook uploads available."
+exit 0

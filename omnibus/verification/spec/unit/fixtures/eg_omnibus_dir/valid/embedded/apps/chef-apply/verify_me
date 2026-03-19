@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+puts "Chef Infra Client is ready to apply configurations."
+puts "Node convergence and desired-state enforcement available."
+exit 0
