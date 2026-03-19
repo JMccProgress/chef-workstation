@@ -69,6 +69,18 @@ describe ChefWorkstation::Command::Verify do
     expect(command_instance.banner).to eq("Usage: chef verify [component, ...] [options]")
   end
 
+  describe ".component" do
+    it "retrieves a registered component by name" do
+      component = ChefWorkstation::Command::Verify.component("berkshelf")
+      expect(component).to be_a(ChefWorkstation::ComponentTest)
+      expect(component.name).to eq("berkshelf")
+    end
+
+    it "returns nil for an unregistered component name" do
+      expect(ChefWorkstation::Command::Verify.component("nonexistent")).to be_nil
+    end
+  end
+
   describe "when locating omnibus directory from the ruby path" do
     it "should find omnibus root directory from ruby path" do
       allow(Gem).to receive(:ruby).and_return(File.join(fixtures_path, "eg_omnibus_dir/valid/embedded/bin/ruby"))
@@ -335,4 +347,117 @@ describe ChefWorkstation::Command::Verify do
     end
   end
 
+  # Zoomed-out integration-style tests covering the full verification workflow
+  describe "zoomed-out verification workflow" do
+    let(:stdout_io) { StringIO.new }
+    let(:stderr_io) { StringIO.new }
+    let(:ruby_path) { File.join(fixtures_path, "eg_omnibus_dir/valid/embedded/bin/ruby") }
+
+    def stdout
+      stdout_io.string
+    end
+
+    before do
+      allow(Gem).to receive(:ruby).and_return(ruby_path)
+      allow(command_instance).to receive(:stdout).and_return(stdout_io)
+      allow(command_instance).to receive(:stderr).and_return(stderr_io)
+    end
+
+    context "with multiple components some passing and some failing smoke tests" do
+      let(:passing_component) do
+        ChefWorkstation::ComponentTest.new("passing_comp").tap do |c|
+          c.base_dir = "embedded/apps/berkshelf"
+          c.smoke_test { sh("exit 0") }
+        end
+      end
+
+      let(:another_passing_component) do
+        ChefWorkstation::ComponentTest.new("another_passing_comp").tap do |c|
+          c.base_dir = "embedded/apps/test-kitchen"
+          c.smoke_test { sh("exit 0") }
+        end
+      end
+
+      let(:failing_component) do
+        ChefWorkstation::ComponentTest.new("failing_comp").tap do |c|
+          c.base_dir = "embedded/apps/chef"
+          c.smoke_test { sh("exit 1") }
+        end
+      end
+
+      before do
+        allow(command_instance).to receive(:components).and_return(
+          [passing_component, another_passing_component, failing_component]
+        )
+        command_instance.run([])
+      end
+
+      it "reports success for passing components" do
+        expect(stdout).to include("Verification of component 'passing_comp' succeeded.")
+        expect(stdout).to include("Verification of component 'another_passing_comp' succeeded.")
+      end
+
+      it "reports failure for failing components" do
+        expect(stdout).to include("Verification of component 'failing_comp' failed.")
+      end
+
+      it "includes the separator line in output" do
+        expect(stdout).to include("---------------------------------------------")
+      end
+    end
+
+    context "filtering components by name in zoomed-out scenario" do
+      let(:comp_a) do
+        ChefWorkstation::ComponentTest.new("comp_a").tap do |c|
+          c.base_dir = "embedded/apps/berkshelf"
+          c.smoke_test { sh("exit 0") }
+        end
+      end
+
+      let(:comp_b) do
+        ChefWorkstation::ComponentTest.new("comp_b").tap do |c|
+          c.base_dir = "embedded/apps/test-kitchen"
+          c.smoke_test { sh("exit 0") }
+        end
+      end
+
+      before do
+        allow(command_instance).to receive(:components).and_return([comp_a, comp_b])
+        command_instance.run(["comp_b"])
+      end
+
+      it "only runs the specified component" do
+        expect(stdout).not_to include("Verification of component 'comp_a'")
+        expect(stdout).to include("Verification of component 'comp_b' succeeded.")
+      end
+    end
+
+    context "with unit and smoke tests both passing" do
+      let(:run_unit_test) do
+        lambda { |_self| sh("#{Gem.real_ruby} verify_me", env: { "RUBYOPT" => "" }) }
+      end
+
+      let(:full_passing_component) do
+        ChefWorkstation::ComponentTest.new("successful_comp").tap do |c|
+          c.base_dir = "embedded/apps/berkshelf"
+          c.unit_test(&run_unit_test)
+          c.smoke_test { sh("exit 0") }
+        end
+      end
+
+      before do
+        allow(command_instance).to receive(:components).and_return([full_passing_component])
+        command_instance.run(%w{--unit --verbose})
+      end
+
+      it "reports the component as succeeded" do
+        expect(stdout).to include("Verification of component 'successful_comp' succeeded.")
+      end
+
+      it "includes unit test output when verbose" do
+        expect(stdout).to include("you are good to go...")
+      end
+    end
+
+  end
 end

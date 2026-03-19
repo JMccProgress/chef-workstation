@@ -125,4 +125,133 @@ describe ChefWorkstation::ComponentTest do
 
   end
 
+  # Zoomed-in unit tests for individual methods
+  context "zoomed-in tests for individual methods" do
+
+    let(:omnibus_root) { File.join(fixtures_path, "eg_omnibus_dir/valid/") }
+
+    before do
+      component.omnibus_root = omnibus_root
+      component.base_dir = "embedded/apps/berkshelf"
+    end
+
+    describe "#bin" do
+      it "returns the path to a binary in the omnibus bin dir" do
+        result = component.bin("berks")
+        expect(result).to include("berks")
+        expect(result).to include(omnibus_root)
+      end
+    end
+
+    describe "#embedded_bin" do
+      it "returns the path to a binary in the omnibus embedded bin dir" do
+        result = component.embedded_bin("ruby")
+        expect(result).to include("ruby")
+        expect(result).to include("embedded")
+      end
+    end
+
+    describe "#sh!" do
+      it "returns the result when the command succeeds" do
+        result = component.sh!("true")
+        expect(result.exitstatus).to eq(0)
+      end
+
+      it "raises an error when the command fails" do
+        expect { component.sh!("false") }.to raise_error(Mixlib::ShellOut::ShellCommandFailed)
+      end
+    end
+
+    describe "#fail_if_exit_zero" do
+      it "raises an error when the command exits zero" do
+        expect { component.fail_if_exit_zero("true", "should have failed") }.to raise_error("should have failed")
+      end
+
+      it "returns a passing result when the command exits non-zero" do
+        result = component.fail_if_exit_zero("false")
+        expect(result.exitstatus).to eq(0)
+      end
+    end
+
+    describe "#nix_platform_native_bin_dir" do
+      it "returns a string path for the native bin directory" do
+        result = component.nix_platform_native_bin_dir
+        expect(result).to be_a(String)
+        expect(result).to start_with("/usr")
+      end
+    end
+
+    describe "#omnibus_root" do
+      it "raises an error when omnibus_root is not set" do
+        c = ChefWorkstation::ComponentTest.new("test_component")
+        c.base_dir = "somedir"
+        expect { c.omnibus_root }.to raise_error(/omnibus_root.*must be set/)
+      end
+    end
+
+    describe "#omnibus_path" do
+      it "returns a PATH-style string containing the omnibus bin directories" do
+        result = component.omnibus_path
+        expect(result).to include(File::PATH_SEPARATOR)
+        expect(result).to include("embedded")
+      end
+    end
+
+    describe "#component_path" do
+      it "raises an error when neither base_dir nor gem_base_dir is defined" do
+        c = ChefWorkstation::ComponentTest.new("test_component")
+        c.omnibus_root = omnibus_root
+        expect { c.component_path }.to raise_error(/base_dir.*or.*gem_base_dir.*must be defined/)
+      end
+
+      it "uses gem_base_dir when base_dir is not set" do
+        c = ChefWorkstation::ComponentTest.new("test_component")
+        c.omnibus_root = omnibus_root
+        fake_gem = double("gem_spec", gem_dir: "/path/to/gem")
+        allow(Gem::Specification).to receive(:find_by_name).and_return(fake_gem)
+        c.gem_base_dir = "some-gem"
+        expect(c.component_path).to eq("/path/to/gem")
+      end
+    end
+
+    describe "#gem_base_dir" do
+      it "returns nil when no gem name is set" do
+        c = ChefWorkstation::ComponentTest.new("test_component")
+        expect(c.gem_base_dir).to be_nil
+      end
+
+      it "returns the gem directory when the gem is installed" do
+        c = ChefWorkstation::ComponentTest.new("test_component")
+        fake_gem = double("gem_spec", gem_dir: "/path/to/gem")
+        allow(Gem::Specification).to receive(:find_by_name).with("some-gem").and_return(fake_gem)
+        c.gem_base_dir = "some-gem"
+        expect(c.gem_base_dir).to eq("/path/to/gem")
+      end
+
+      it "falls back to prerelease version lookup when no stable version is found" do
+        c = ChefWorkstation::ComponentTest.new("test_component")
+        fake_gem = double("gem_spec", gem_dir: "/path/to/prerelease-gem")
+        allow(Gem::Specification).to receive(:find_by_name).with("some-gem").and_return(nil)
+        allow(Gem::Specification).to receive(:find_by_name).with("some-gem", ">= 0.a").and_return(fake_gem)
+        c.gem_base_dir = "some-gem"
+        expect(c.gem_base_dir).to eq("/path/to/prerelease-gem")
+      end
+    end
+
+    describe "#assert_present!" do
+      it "raises MissingComponentError when the component path does not exist" do
+        c = ChefWorkstation::ComponentTest.new("missing_component")
+        c.omnibus_root = omnibus_root
+        c.base_dir = "nonexistent_dir"
+        expect { c.assert_present! }.to raise_error(ChefWorkstation::MissingComponentError)
+      end
+
+      it "raises MissingComponentError when gem loading fails" do
+        c = ChefWorkstation::ComponentTest.new("bad_gem_component")
+        allow(c).to receive(:component_path).and_raise(Gem::LoadError.new("gem not found"))
+        expect { c.assert_present! }.to raise_error(ChefWorkstation::MissingComponentError)
+      end
+    end
+
+  end
 end
